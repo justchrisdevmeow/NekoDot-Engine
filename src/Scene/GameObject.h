@@ -1,44 +1,62 @@
 #pragma once
 #include <vector>
 #include <string>
-#include <unordered_map>
+#include <memory>
 #include "Component.h"
 
 class GameObject {
 public:
-    GameObject(const std::string& name = "") : name(name), active(true) {}
+    GameObject(const std::string& name = "") : name(name) {
+        transform = addComponent<Transform>();
+    }
+    
+    ~GameObject() {
+        for (auto* comp : components) delete comp;
+    }
     
     template<typename T>
     T* addComponent() {
-        T* component = new T(this);
-        components.push_back(component);
-        componentMap[typeid(T).name()] = component;
-        return component;
+        T* comp = new T(this);
+        components.push_back(comp);
+        componentMap[std::type_index(typeid(T))] = comp;
+        return comp;
     }
     
     template<typename T>
     T* getComponent() {
-        auto it = componentMap.find(typeid(T).name());
+        auto it = componentMap.find(std::type_index(typeid(T)));
         if (it != componentMap.end()) {
             return static_cast<T*>(it->second);
         }
         return nullptr;
     }
     
+    void start() {
+        for (auto* comp : components) comp->start();
+    }
+    
     void update(float dt) {
         if (!active) return;
-        for (auto comp : components) {
-            comp->update(dt);
+        for (auto* comp : components) {
+            if (!comp->isDestroyed()) comp->update(dt);
         }
     }
     
-    void setActive(bool active) { this->active = active; }
+    void draw() {
+        if (!active) return;
+        for (auto* comp : components) comp->draw();
+    }
+    
+    void setName(const std::string& n) { name = n; }
+    std::string getName() const { return name; }
+    void setActive(bool a) { active = a; }
     bool isActive() const { return active; }
-    const std::string& getName() const { return name; }
+    
+    Transform* transform = nullptr;
     
 private:
     std::string name;
-    bool active;
+    bool active = true;
     std::vector<Component*> components;
-    std::unordered_map<std::string, Component*> componentMap;
+    std::unordered_map<std::type_index, Component*> componentMap;
 };
