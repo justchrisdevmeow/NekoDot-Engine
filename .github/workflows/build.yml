@@ -12,18 +12,23 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install dependencies
+    - name: Install dependencies via msys2
       run: |
-        choco install cmake glew glm sdl2 sdl2_mixer sdl2_image mono
+        choco install msys2
+        refreshenv
+        C:\tools\msys64\usr\bin\bash -lc "pacman -S --noconfirm mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL2_image mingw-w64-x86_64-SDL2_mixer mingw-w64-x86_64-glew mingw-w64-x86_64-glm mingw-w64-x86_64-nlohmann-json"
     
     - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      run: |
+        cmake -B build -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
     
     - name: Build
-      run: cmake --build build --config Release
+      run: |
+        cd build
+        mingw32-make
     
     - name: Upload executable
       uses: actions/upload-artifact@v4
       with:
         name: MeowDot-Windows
-        path: build/Release/MeowDot.exe
+        path: build/MeowDot.exe
