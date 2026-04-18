@@ -1,12 +1,3 @@
-#include <SDL2/SDL.h>
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <imgui.h>
-#include <imgui_impl_sdl2.h>
-#include <imgui_impl_opengl3.h>
-#include <mono/jit/jit.h>
-#include <mono/metadata/assembly.h>
-
 #include "Core/Window.h"
 #include "Core/Input.h"
 #include "Core/Time.h"
@@ -19,14 +10,16 @@
 #include "Scene/Component.h"
 #include "Scripting/CSharpBridge.h"
 
+#include <SDL2/SDL.h>
+#include <GL/glew.h>
+#include <imgui.h>
+#include <imgui_impl_sdl2.h>
+#include <imgui_impl_opengl3.h>
+#include <mono/jit/jit.h>
+
 int main(int argc, char* argv[]) {
-    // Initialize SDL
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-    
-    // Create window
+    // Initialize engine
     Window::create(1280, 720, "MeowDot");
-    
-    // Initialize OpenGL
     glewInit();
     
     // Initialize ImGui
@@ -38,9 +31,7 @@ int main(int argc, char* argv[]) {
     // Initialize Mono (C# scripting)
     mono_jit_init("MeowDot");
     CSharpBridge::init();
-    
-    // Load user scripts
-    CSharpBridge::loadScript("game/scripts/main.cs");
+    CSharpBridge::loadScript("scripts/main.cs");
     
     // Main loop
     bool running = true;
@@ -55,7 +46,6 @@ int main(int argc, char* argv[]) {
             Input::handleEvent(event);
         }
         
-        // Start ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
@@ -63,13 +53,11 @@ int main(int argc, char* argv[]) {
         // Call user C# update
         CSharpBridge::callMethod("onUpdate", Time::deltaTime());
         
-        // Render
         Renderer::clear();
         
         // Call user C# draw
         CSharpBridge::callMethod("onDraw");
         
-        // Render ImGui
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         
@@ -83,7 +71,6 @@ int main(int argc, char* argv[]) {
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
     Window::destroy();
-    SDL_Quit();
     
     return 0;
 }
