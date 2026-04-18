@@ -13,7 +13,9 @@
 #include "../src/Graphics/Texture.h"
 #include "../src/Graphics/Mesh.h"
 #include "../src/Scene/GameObject.h"
+#include "../src/Scene/Component.h"
 #include "../src/Scripting/CSharpBridge.h"
+
 
 using json = nlohmann::json;
 
@@ -243,24 +245,68 @@ void drawInspector() {
         
         ImGui::Separator();
         ImGui::Text("Transform");
-        ImGui::DragFloat3("Position", &obj->transform.position.x, 0.1f);
-        ImGui::DragFloat3("Rotation", &obj->transform.rotation.x, 1.0f);
-        ImGui::DragFloat3("Scale", &obj->transform.scale.x, 0.1f);
+        ImGui::DragFloat3("Position", &obj->transform->position.x, 0.1f);
+        ImGui::DragFloat3("Rotation", &obj->transform->rotation.x, 1.0f);
+        ImGui::DragFloat3("Scale", &obj->transform->scale.x, 0.1f);
         
         ImGui::Separator();
         ImGui::Text("Components");
+        
+        SpriteRenderer* sprite = obj->getComponent<SpriteRenderer>();
+        if (sprite) {
+            ImGui::Text("Sprite Renderer");
+            static char texPath[256];
+            strcpy(texPath, sprite->texturePath.c_str());
+            if (ImGui::InputText("Texture", texPath, 256)) {
+                sprite->setTexture(texPath);
+            }
+            ImGui::ColorEdit4("Color", &sprite->color.r);
+        }
+        
+        MeshRenderer* mesh = obj->getComponent<MeshRenderer>();
+        if (mesh) {
+            ImGui::Text("Mesh Renderer");
+            static char meshPath[256];
+            strcpy(meshPath, mesh->meshPath.c_str());
+            if (ImGui::InputText("Mesh", meshPath, 256)) {
+                mesh->setMesh(meshPath);
+            }
+            ImGui::ColorEdit4("Color", &mesh->color.r);
+        }
+        
+        Rigidbody* rb = obj->getComponent<Rigidbody>();
+        if (rb) {
+            ImGui::Text("Rigidbody");
+            ImGui::DragFloat("Mass", &rb->mass, 0.1f);
+            ImGui::Checkbox("Use Gravity", &rb->useGravity);
+            ImGui::Checkbox("Is Kinematic", &rb->isKinematic);
+        }
+        
+        ScriptComponent* script = obj->getComponent<ScriptComponent>();
+        if (script) {
+            ImGui::Text("Script");
+            static char scriptPath[256];
+            strcpy(scriptPath, script->scriptPath.c_str());
+            if (ImGui::InputText("Script File", scriptPath, 256)) {
+                script->setScript(scriptPath);
+            }
+        }
         
         if (ImGui::Button("Add Component")) {
             ImGui::OpenPopup("AddComponentPopup");
         }
         if (ImGui::BeginPopup("AddComponentPopup")) {
             if (ImGui::MenuItem("Sprite Renderer")) {
+                obj->addComponent<SpriteRenderer>();
             }
             if (ImGui::MenuItem("Mesh Renderer")) {
+                obj->addComponent<MeshRenderer>();
             }
             if (ImGui::MenuItem("Rigidbody")) {
+                obj->addComponent<Rigidbody>();
             }
             if (ImGui::MenuItem("Script")) {
+                obj->addComponent<ScriptComponent>();
             }
             ImGui::EndPopup();
         }
