@@ -12,23 +12,38 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install dependencies via msys2
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgDirectory: 'C:/vcpkg'
+        vcpkgJsonGlob: 'vcpkg.json'
+    
+    - name: Create vcpkg.json
       run: |
-        choco install msys2
-        refreshenv
-        C:\tools\msys64\usr\bin\bash -lc "pacman -S --noconfirm mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL2_image mingw-w64-x86_64-SDL2_mixer mingw-w64-x86_64-glew mingw-w64-x86_64-glm mingw-w64-x86_64-nlohmann-json"
+        echo '{
+          "name": "meowdot",
+          "version": "1.0.0",
+          "dependencies": [
+            "sdl2",
+            "sdl2-image",
+            "sdl2-mixer",
+            "glew",
+            "glm",
+            "nlohmann-json",
+            "imgui"
+          ]
+        }' > vcpkg.json
     
     - name: Configure CMake
       run: |
-        cmake -B build -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
+        cmake -B build -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release
     
     - name: Build
       run: |
-        cd build
-        mingw32-make
+        cmake --build build --config Release
     
     - name: Upload executable
       uses: actions/upload-artifact@v4
       with:
         name: MeowDot-Windows
-        path: build/MeowDot.exe
+        path: build/Release/MeowDot.exe
